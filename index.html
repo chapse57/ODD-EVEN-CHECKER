@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>홀짝 판별기</title>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
     :root {
       --bg: #0a0a0f;
@@ -27,7 +27,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      overflow-x: hidden;
     }
 
     body::before {
@@ -59,23 +59,87 @@
     .glow-blob.left  { top: -100px; left: -100px; background: var(--even-color); }
     .glow-blob.right { bottom: -100px; right: -100px; background: var(--odd-color); }
 
+    /* ── 커스텀 언어 드롭다운 ── */
+    .lang-wrap {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 200;
+    }
+
+    .lang-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: .82rem;
+      color: var(--white);
+      user-select: none;
+      transition: border-color .2s;
+      white-space: nowrap;
+    }
+    .lang-trigger:hover { border-color: var(--even-color); }
+
+    .lang-trigger img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; }
+
+    .lang-arrow {
+      font-size: .65rem;
+      color: var(--neutral);
+      margin-left: 2px;
+      transition: transform .2s;
+    }
+    .lang-wrap.open .lang-arrow { transform: rotate(180deg); }
+
+    .lang-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      min-width: 170px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    }
+    .lang-wrap.open .lang-dropdown { display: block; }
+
+    .lang-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: .84rem;
+      transition: background .15s;
+    }
+    .lang-item:hover    { background: rgba(255,255,255,.05); }
+    .lang-item.active   { background: rgba(0,229,255,.1); color: var(--even-color); }
+    .lang-item img      { width: 24px; height: 16px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── Main ── */
     .container {
       position: relative;
       z-index: 1;
       width: min(520px, 92vw);
       text-align: center;
+      padding-top: 70px;
     }
 
     .label {
       font-family: 'Black Han Sans', sans-serif;
-      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-size: clamp(1.8rem, 7vw, 3rem);
       letter-spacing: -.02em;
-      line-height: 1;
+      line-height: 1.1;
       margin-bottom: 8px;
     }
 
     .subtitle {
-      font-size: .85rem;
+      font-size: .82rem;
       color: var(--neutral);
       margin-bottom: 6px;
       letter-spacing: .08em;
@@ -102,7 +166,6 @@
       position: relative;
       overflow: hidden;
     }
-
     .card::after {
       content: '';
       position: absolute;
@@ -112,14 +175,8 @@
       transition: opacity .5s;
       pointer-events: none;
     }
-
     .card.even-mode::after { box-shadow: inset 0 0 60px rgba(0,229,255,.08); opacity: 1; }
     .card.odd-mode::after  { box-shadow: inset 0 0 60px rgba(255,77,109,.08); opacity: 1; }
-
-    .input-wrap {
-      position: relative;
-      margin-bottom: 20px;
-    }
 
     input[type="text"] {
       width: 100%;
@@ -133,12 +190,9 @@
       text-align: center;
       outline: none;
       transition: border-color .3s, box-shadow .3s;
-      letter-spacing: .03em;
       word-break: break-all;
+      margin-bottom: 6px;
     }
-
-    input[type="text"]::placeholder { color: #333; font-size: 1rem; font-family: 'Noto Sans KR', sans-serif; }
-
     input[type="text"]:focus {
       border-color: var(--even-color);
       box-shadow: 0 0 0 4px rgba(0,229,255,.1);
@@ -148,29 +202,26 @@
       font-size: .7rem;
       color: #444;
       text-align: right;
-      margin-top: 6px;
-      margin-bottom: 4px;
-      letter-spacing: .04em;
+      margin-bottom: 16px;
       transition: color .3s;
     }
     .digit-count.big { color: #00e5ff; }
 
-    button {
+    #checkBtn {
       width: 100%;
       padding: 16px;
       border: none;
       border-radius: 12px;
       font-family: 'Black Han Sans', sans-serif;
       font-size: 1.1rem;
-      letter-spacing: .08em;
+      letter-spacing: .06em;
       cursor: pointer;
       background: linear-gradient(135deg, #00e5ff, #0077ff);
       color: #000;
       transition: transform .15s, box-shadow .15s, opacity .15s;
     }
-
-    button:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,255,.3); }
-    button:active { transform: translateY(0); opacity: .85; }
+    #checkBtn:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,255,.3); }
+    #checkBtn:active { transform: translateY(0); opacity: .85; }
 
     .result-area {
       margin-top: 28px;
@@ -184,19 +235,17 @@
     .result-badge {
       display: inline-block;
       font-family: 'Black Han Sans', sans-serif;
-      font-size: clamp(1.6rem, 6vw, 2.8rem);
-      letter-spacing: -.01em;
+      font-size: clamp(1.5rem, 5vw, 2.6rem);
       opacity: 0;
       transform: translateY(12px) scale(.96);
       transition: opacity .4s cubic-bezier(.22,1,.36,1), transform .4s cubic-bezier(.22,1,.36,1);
       word-break: break-all;
       line-height: 1.3;
     }
-
     .result-badge.show { opacity: 1; transform: translateY(0) scale(1); }
     .result-badge.even { color: var(--even-color); }
     .result-badge.odd  { color: var(--odd-color); }
-    .result-badge.error { color: #ffaa44; font-size: 1rem; margin-top: 8px; font-family: 'Noto Sans KR'; }
+    .result-badge.error { color: #ffaa44; font-size: 1rem; font-family: sans-serif; }
 
     .result-sub {
       font-size: .78rem;
@@ -204,25 +253,14 @@
       margin-top: 6px;
       opacity: 0;
       transition: opacity .4s .15s;
-      letter-spacing: .06em;
     }
     .result-sub.show { opacity: 1; }
 
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 28px 0 0;
-    }
+    .divider { height: 1px; background: var(--border); margin: 28px 0 0; }
 
-    .history { margin-top: 28px; text-align: left; }
-    .history-title {
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: #444;
-      margin-bottom: 12px;
-    }
-    .history-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .history { margin-top: 20px; text-align: left; }
+    .history-title { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #444; margin-bottom: 10px; }
+    .history-list  { display: flex; flex-wrap: wrap; gap: 8px; }
 
     .chip {
       padding: 5px 14px;
@@ -231,7 +269,7 @@
       font-family: 'Black Han Sans', sans-serif;
       border: 1px solid;
       animation: chipIn .25s ease;
-      max-width: 100%;
+      max-width: 160px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -249,17 +287,25 @@
 <div class="glow-blob left"></div>
 <div class="glow-blob right"></div>
 
+<!-- 커스텀 언어 드롭다운 -->
+<div class="lang-wrap" id="langWrap">
+  <div class="lang-trigger" id="langTrigger" onclick="toggleDropdown()">
+    <img id="triggerFlag" src="" alt=""/>
+    <span id="triggerLabel">한국어</span>
+    <span class="lang-arrow">▼</span>
+  </div>
+  <div class="lang-dropdown" id="langDropdown"></div>
+</div>
+
 <div class="container">
-  <div class="label">홀짝 판별기</div>
-  <div class="subtitle">Odd &amp; Even Checker</div>
-  <div class="bigint-badge">✨ BigInt 지원 — 자릿수 무제한</div>
+  <div class="label" id="title"></div>
+  <div class="subtitle">ODD &amp; EVEN CHECKER</div>
+  <div class="bigint-badge" id="badgeInfo"></div>
 
   <div class="card" id="card">
-    <div class="input-wrap">
-      <input type="text" id="numInput" placeholder="아무리 큰 정수도 OK!" autocomplete="off" inputmode="numeric"/>
-      <div class="digit-count" id="digitCount">0자리</div>
-    </div>
-    <button onclick="check()">판별하기</button>
+    <input type="text" id="numInput" autocomplete="off" inputmode="numeric"/>
+    <div class="digit-count" id="digitCount"></div>
+    <button id="checkBtn" onclick="check()"></button>
 
     <div class="result-area">
       <div class="result-badge" id="badge"></div>
@@ -268,96 +314,215 @@
 
     <div class="divider" id="divider" style="display:none"></div>
     <div class="history" id="historyBox" style="display:none">
-      <div class="history-title">최근 기록</div>
+      <div class="history-title" id="historyTitle"></div>
       <div class="history-list" id="historyList"></div>
     </div>
   </div>
 </div>
 
 <script>
-  const input      = document.getElementById('numInput');
-  const badge      = document.getElementById('badge');
-  const sub        = document.getElementById('sub');
-  const card       = document.getElementById('card');
-  const divider    = document.getElementById('divider');
-  const histBox    = document.getElementById('historyBox');
-  const histList   = document.getElementById('historyList');
-  const digitCount = document.getElementById('digitCount');
+  // flagcdn.com : 무료 국기 이미지 CDN
+  const FLAG = code => `https://flagcdn.com/w40/${code}.png`;
 
-  // 자릿수 실시간 표시
-  input.addEventListener('input', () => {
-    const raw = input.value.replace(/^-/, '').replace(/\s/g, '');
-    const len = raw.length;
-    digitCount.textContent = len ? `${len.toLocaleString()}자리` : '0자리';
-    digitCount.className = len > 20 ? 'digit-count big' : 'digit-count';
-  });
+  const LANGS = [
+    { code:'ko', flag: FLAG('kr'), label:'한국어' },
+    { code:'en', flag: FLAG('us'), label:'English' },
+    { code:'ja', flag: FLAG('jp'), label:'日本語' },
+    { code:'zh', flag: FLAG('cn'), label:'中文' },
+    { code:'ru', flag: FLAG('ru'), label:'Русский' },
+    { code:'vi', flag: FLAG('vn'), label:'Tiếng Việt' },
+    { code:'it', flag: FLAG('it'), label:'Italiano' },
+    { code:'fr', flag: FLAG('fr'), label:'Français' },
+  ];
 
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  const i18n = {
+    ko: {
+      title:'홀짝 판별기', badgeInfo:'✨ BigInt 지원 — 자릿수 무제한',
+      placeholder:'아무리 큰 정수도 OK!', btn:'판별하기', digitUnit:'자리', history:'최근 기록',
+      errEmpty:'숫자를 입력해주세요 🙏', errInt:'정수만 입력 가능해요 🔢', errIntSub:'소수점, 문자는 안 돼요',
+      even:(n,d)=>`${n}${d}\n은(는) 짝수!`, odd:(n,d)=>`${n}${d}\n은(는) 홀수!`,
+      evenSub:'2로 나누어 떨어집니다', oddSub:'2로 나누면 1이 남습니다',
+    },
+    en: {
+      title:'Odd Even Checker', badgeInfo:'✨ BigInt — Unlimited digits',
+      placeholder:'Enter any integer!', btn:'Check', digitUnit:' digits', history:'Recent',
+      errEmpty:'Please enter a number 🙏', errInt:'Integers only 🔢', errIntSub:'No decimals or letters',
+      even:(n,d)=>`${n}${d}\nis Even!`, odd:(n,d)=>`${n}${d}\nis Odd!`,
+      evenSub:'Divisible by 2', oddSub:'Remainder 1 when divided by 2',
+    },
+    ja: {
+      title:'奇数偶数チェッカー', badgeInfo:'✨ BigInt対応 — 桁数無制限',
+      placeholder:'整数を入力してください', btn:'判定する', digitUnit:'桁', history:'履歴',
+      errEmpty:'数字を入力してください 🙏', errInt:'整数のみ入力可能です 🔢', errIntSub:'小数点・文字は使えません',
+      even:(n,d)=>`${n}${d}\nは偶数です!`, odd:(n,d)=>`${n}${d}\nは奇数です!`,
+      evenSub:'2で割り切れます', oddSub:'2で割ると余り1',
+    },
+    zh: {
+      title:'奇偶数判断器', badgeInfo:'✨ BigInt支持 — 位数无限',
+      placeholder:'输入任意整数！', btn:'判断', digitUnit:'位', history:'历史记录',
+      errEmpty:'请输入数字 🙏', errInt:'只能输入整数 🔢', errIntSub:'不支持小数和字母',
+      even:(n,d)=>`${n}${d}\n是偶数！`, odd:(n,d)=>`${n}${d}\n是奇数！`,
+      evenSub:'能被2整除', oddSub:'除以2余1',
+    },
+    ru: {
+      title:'Чётность числа', badgeInfo:'✨ BigInt — Без ограничений',
+      placeholder:'Введите целое число!', btn:'Проверить', digitUnit:' цифр', history:'История',
+      errEmpty:'Введите число 🙏', errInt:'Только целые числа 🔢', errIntSub:'Дробные и буквы недопустимы',
+      even:(n,d)=>`${n}${d}\nЧётное!`, odd:(n,d)=>`${n}${d}\nНечётное!`,
+      evenSub:'Делится на 2', oddSub:'Остаток 1 при делении на 2',
+    },
+    vi: {
+      title:'Kiểm Tra Chẵn Lẻ', badgeInfo:'✨ BigInt — Không giới hạn chữ số',
+      placeholder:'Nhập số nguyên bất kỳ!', btn:'Kiểm tra', digitUnit:' chữ số', history:'Lịch sử',
+      errEmpty:'Vui lòng nhập số 🙏', errInt:'Chỉ nhập số nguyên 🔢', errIntSub:'Không dùng số thập phân hoặc chữ',
+      even:(n,d)=>`${n}${d}\nlà Số Chẵn!`, odd:(n,d)=>`${n}${d}\nlà Số Lẻ!`,
+      evenSub:'Chia hết cho 2', oddSub:'Chia 2 dư 1',
+    },
+    it: {
+      title:'Pari o Dispari', badgeInfo:'✨ BigInt — Cifre illimitate',
+      placeholder:'Inserisci un intero!', btn:'Controlla', digitUnit:' cifre', history:'Cronologia',
+      errEmpty:'Inserisci un numero 🙏', errInt:'Solo numeri interi 🔢', errIntSub:'Niente decimali o lettere',
+      even:(n,d)=>`${n}${d}\nè Pari!`, odd:(n,d)=>`${n}${d}\nè Dispari!`,
+      evenSub:'Divisibile per 2', oddSub:'Resto 1 diviso per 2',
+    },
+    fr: {
+      title:'Pair ou Impair', badgeInfo:'✨ BigInt — Chiffres illimités',
+      placeholder:'Entrez un entier!', btn:'Vérifier', digitUnit:' chiffres', history:'Historique',
+      errEmpty:'Veuillez entrer un nombre 🙏', errInt:'Entiers seulement 🔢', errIntSub:'Pas de décimales ni de lettres',
+      even:(n,d)=>`${n}${d}\nest Pair!`, odd:(n,d)=>`${n}${d}\nest Impair!`,
+      evenSub:'Divisible par 2', oddSub:'Reste 1 divisé par 2',
+    },
+  };
 
-  function check() {
-    const raw = input.value.trim().replace(/\s/g, '');
+  let lang = 'ko';
+  let lastResult = null;
+  const el = id => document.getElementById(id);
 
-    badge.className = 'result-badge';
-    sub.className   = 'result-sub';
-
-    if (raw === '' || raw === '-') {
-      show('숫자를 입력해주세요 🙏', 'error', '');
-      return;
-    }
-
-    // 정수 형식 검사 (음수 포함, 자릿수 무제한)
-    if (!/^-?\d+$/.test(raw)) {
-      show('정수만 입력 가능해요 🔢', 'error', '소수점, 문자는 안 돼요');
-      return;
-    }
-
-    // BigInt로 처리 → 자릿수 무제한!
-    const n = BigInt(raw);
-    const isEven = n % 2n === 0n;
-
-    const digits = raw.replace(/^-/, '').length;
-    const digitLabel = digits > 15 ? ` (${digits.toLocaleString()}자리)` : '';
-
-    // 20자리 초과 시 앞뒤만 표시
-    const displayNum = digits > 20
-      ? `${raw.slice(0, 6)}…${raw.slice(-4)}`
-      : raw;
-
-    if (isEven) {
-      show(`${displayNum}${digitLabel}\n은(는) 짝수!`, 'even', '2로 나누어 떨어집니다');
-      card.className = 'card even-mode';
-      addChip(displayNum, 'even');
-    } else {
-      show(`${displayNum}${digitLabel}\n은(는) 홀수!`, 'odd', '2로 나누면 1이 남습니다');
-      card.className = 'card odd-mode';
-      addChip(displayNum, 'odd');
-    }
-
-    input.value = '';
-    digitCount.textContent = '0자리';
-    digitCount.className = 'digit-count';
-    input.focus();
+  // ── 드롭다운 빌드 ──
+  function buildDropdown() {
+    const dd = el('langDropdown');
+    LANGS.forEach(l => {
+      const item = document.createElement('div');
+      item.className = 'lang-item' + (l.code === lang ? ' active' : '');
+      item.dataset.code = l.code;
+      item.innerHTML = `<img src="${l.flag}" alt="${l.label}"/><span>${l.label}</span>`;
+      item.onclick = () => { selectLang(l.code); closeDropdown(); };
+      dd.appendChild(item);
+    });
+    // 트리거 초기화
+    const cur = LANGS.find(l => l.code === lang);
+    el('triggerFlag').src = cur.flag;
+    el('triggerLabel').textContent = cur.label;
   }
 
-  function show(text, cls, subText) {
+  function toggleDropdown() {
+    el('langWrap').classList.toggle('open');
+  }
+
+  function closeDropdown() {
+    el('langWrap').classList.remove('open');
+  }
+
+  // 외부 클릭 시 닫기
+  document.addEventListener('click', e => {
+    if (!el('langWrap').contains(e.target)) closeDropdown();
+  });
+
+  function selectLang(code) {
+    lang = code;
+    const cur = LANGS.find(l => l.code === code);
+    el('triggerFlag').src = cur.flag;
+    el('triggerLabel').textContent = cur.label;
+    document.querySelectorAll('.lang-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.code === code);
+    });
+    applyLang();
+  }
+
+  function applyLang() {
+    const t = i18n[lang];
+    el('title').textContent        = t.title;
+    el('badgeInfo').textContent    = t.badgeInfo;
+    el('numInput').placeholder     = t.placeholder;
+    el('checkBtn').textContent     = t.btn;
+    el('historyTitle').textContent = t.history;
+    updateDigitCount();
+    if (lastResult) renderResult(lastResult);
+  }
+
+  function updateDigitCount() {
+    const raw = el('numInput').value.replace(/^-/, '');
+    const len = raw.length;
+    const t = i18n[lang];
+    el('digitCount').textContent = len ? `${len.toLocaleString()}${t.digitUnit}` : `0${t.digitUnit}`;
+    el('digitCount').className = len > 20 ? 'digit-count big' : 'digit-count';
+  }
+
+  el('numInput').addEventListener('input', updateDigitCount);
+  el('numInput').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+
+  function check() {
+    const raw = el('numInput').value.trim().replace(/\s/g, '');
+    const t = i18n[lang];
+    el('badge').className = 'result-badge';
+    el('sub').className   = 'result-sub';
+    lastResult = null;
+
+    if (raw === '' || raw === '-') { showMsg(t.errEmpty, 'error', ''); return; }
+    if (!/^-?\d+$/.test(raw))     { showMsg(t.errInt,   'error', t.errIntSub); return; }
+
+    const n = BigInt(raw);
+    const isEven = n % 2n === 0n;
+    const digits = raw.replace(/^-/, '').length;
+    const displayNum = digits > 20 ? `${raw.slice(0,6)}…${raw.slice(-4)}` : raw;
+
+    lastResult = { isEven, displayNum, digits };
+    renderResult(lastResult);
+    addChip(displayNum, isEven ? 'even' : 'odd');
+
+    el('numInput').value = '';
+    updateDigitCount();
+    el('numInput').focus();
+  }
+
+  function renderResult({ isEven, displayNum, digits }) {
+    const t = i18n[lang];
+    const digitLabel = digits > 15 ? ` (${digits.toLocaleString()}${t.digitUnit})` : '';
+    el('badge').className = 'result-badge';
+    el('sub').className   = 'result-sub';
+    el('card').className  = `card ${isEven ? 'even' : 'odd'}-mode`;
     requestAnimationFrame(() => {
-      badge.style.whiteSpace = 'pre-line';
-      badge.textContent = text;
-      badge.classList.add(cls, 'show');
-      sub.textContent = subText;
-      sub.classList.add('show');
+      el('badge').style.whiteSpace = 'pre-line';
+      el('badge').textContent = isEven ? t.even(displayNum, digitLabel) : t.odd(displayNum, digitLabel);
+      el('badge').classList.add(isEven ? 'even' : 'odd', 'show');
+      el('sub').textContent = isEven ? t.evenSub : t.oddSub;
+      el('sub').classList.add('show');
+    });
+  }
+
+  function showMsg(text, cls, subText) {
+    requestAnimationFrame(() => {
+      el('badge').style.whiteSpace = 'pre-line';
+      el('badge').textContent = text;
+      el('badge').classList.add(cls, 'show');
+      el('sub').textContent = subText;
+      el('sub').classList.add('show');
     });
   }
 
   function addChip(label, cls) {
-    divider.style.display = 'block';
-    histBox.style.display = 'block';
+    el('divider').style.display   = 'block';
+    el('historyBox').style.display = 'block';
     const chip = document.createElement('div');
     chip.className = `chip ${cls}`;
     chip.textContent = label;
-    histList.prepend(chip);
-    while (histList.children.length > 12) histList.removeChild(histList.lastChild);
+    el('historyList').prepend(chip);
+    while (el('historyList').children.length > 12) el('historyList').removeChild(el('historyList').lastChild);
   }
+
+  // 초기화
+  buildDropdown();
+  applyLang();
 </script>
 </body>
 </html>
