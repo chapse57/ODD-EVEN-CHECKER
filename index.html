@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>홀짝 판별기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #13131a;
+      --border: #2a2a3a;
+      --even-color: #00e5ff;
+      --odd-color: #ff4d6d;
+      --neutral: #888;
+      --white: #f0f0f8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridMove {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(40px); }
+    }
+
+    .glow-blob {
+      position: fixed;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: .18;
+      pointer-events: none;
+      transition: background 1s ease;
+    }
+    .glow-blob.left  { top: -100px; left: -100px; background: var(--even-color); }
+    .glow-blob.right { bottom: -100px; right: -100px; background: var(--odd-color); }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(480px, 92vw);
+      text-align: center;
+    }
+
+    .label {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      letter-spacing: -.02em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: .85rem;
+      color: var(--neutral);
+      margin-bottom: 40px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity .5s;
+      pointer-events: none;
+    }
+
+    .card.even-mode::after { box-shadow: inset 0 0 60px rgba(0,229,255,.08); opacity: 1; }
+    .card.odd-mode::after  { box-shadow: inset 0 0 60px rgba(255,77,109,.08); opacity: 1; }
+
+    .input-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: #1a1a26;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 24px;
+      font-size: 2rem;
+      font-family: 'Black Han Sans', sans-serif;
+      color: var(--white);
+      text-align: center;
+      outline: none;
+      transition: border-color .3s, box-shadow .3s;
+      letter-spacing: .05em;
+    }
+
+    input[type="text"]::placeholder { color: #333; font-size: 1.2rem; }
+
+    input[type="text"]:focus {
+      border-color: var(--even-color);
+      box-shadow: 0 0 0 4px rgba(0,229,255,.1);
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: .08em;
+      cursor: pointer;
+      background: linear-gradient(135deg, #00e5ff, #0077ff);
+      color: #000;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+    }
+
+    button:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,255,.3); }
+    button:active { transform: translateY(0); opacity: .85; }
+
+    .result-area {
+      margin-top: 28px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-badge {
+      display: inline-block;
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(2.4rem, 10vw, 3.6rem);
+      letter-spacing: -.01em;
+      opacity: 0;
+      transform: translateY(12px) scale(.96);
+      transition: opacity .4s cubic-bezier(.22,1,.36,1), transform .4s cubic-bezier(.22,1,.36,1);
+    }
+
+    .result-badge.show { opacity: 1; transform: translateY(0) scale(1); }
+    .result-badge.even { color: var(--even-color); }
+    .result-badge.odd  { color: var(--odd-color); }
+    .result-badge.error { color: #ffaa44; font-size: 1.1rem; margin-top: 8px; }
+
+    .result-sub {
+      font-size: .78rem;
+      color: var(--neutral);
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity .4s .15s;
+      letter-spacing: .06em;
+    }
+
+    .result-sub.show { opacity: 1; }
+
+    .history {
+      margin-top: 28px;
+      text-align: left;
+    }
+
+    .history-title {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #444;
+      margin-bottom: 12px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: .82rem;
+      font-family: 'Black Han Sans', sans-serif;
+      border: 1px solid;
+      animation: chipIn .25s ease;
+    }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(.8); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .chip.even { color: var(--even-color); border-color: rgba(0,229,255,.3); background: rgba(0,229,255,.06); }
+    .chip.odd  { color: var(--odd-color);  border-color: rgba(255,77,109,.3); background: rgba(255,77,109,.06); }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="glow-blob left"></div>
+<div class="glow-blob right"></div>
+
+<div class="container">
+  <div class="label">홀짝 판별기</div>
+  <div class="subtitle">Odd &amp; Even Checker</div>
+
+  <div class="card" id="card">
+    <div class="input-wrap">
+      <input type="text" id="numInput" placeholder="숫자를 입력하세요" maxlength="15" autocomplete="off"/>
+    </div>
+    <button onclick="check()">판별하기</button>
+
+    <div class="result-area">
+      <div class="result-badge" id="badge"></div>
+      <div class="result-sub"  id="sub"></div>
+    </div>
+
+    <div class="divider" id="divider" style="display:none"></div>
+    <div class="history" id="historyBox" style="display:none">
+      <div class="history-title">최근 기록</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const input   = document.getElementById('numInput');
+  const badge   = document.getElementById('badge');
+  const sub     = document.getElementById('sub');
+  const card    = document.getElementById('card');
+  const divider = document.getElementById('divider');
+  const histBox = document.getElementById('historyBox');
+  const histList= document.getElementById('historyList');
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+
+  function check() {
+    const raw = input.value.trim();
+
+    badge.className = 'result-badge';
+    sub.className   = 'result-sub';
+
+    if (raw === '') {
+      show('숫자를 입력해주세요 🙏', 'error', '');
+      return;
+    }
+
+    const n = Number(raw);
+    if (!Number.isInteger(n) || isNaN(n)) {
+      show('정수를 입력해주세요 🔢', 'error', '');
+      return;
+    }
+
+    const isEven = n % 2 === 0;
+
+    if (isEven) {
+      show(`${n} 은(는) 짝수!`, 'even', '2로 나누어 떨어집니다');
+      card.className = 'card even-mode';
+      addChip(n, 'even');
+    } else {
+      show(`${n} 은(는) 홀수!`, 'odd', '2로 나누면 1이 남습니다');
+      card.className = 'card odd-mode';
+      addChip(n, 'odd');
+    }
+
+    input.value = '';
+    input.focus();
+  }
+
+  function show(text, cls, subText) {
+    requestAnimationFrame(() => {
+      badge.textContent = text;
+      badge.classList.add(cls, 'show');
+      sub.textContent = subText;
+      sub.classList.add('show');
+    });
+  }
+
+  function addChip(n, cls) {
+    divider.style.display = 'block';
+    histBox.style.display = 'block';
+
+    const chip = document.createElement('div');
+    chip.className = `chip ${cls}`;
+    chip.textContent = n;
+    histList.prepend(chip);
+
+    // keep max 12 chips
+    while (histList.children.length > 12) {
+      histList.removeChild(histList.lastChild);
+    }
+  }
+</script>
+</body>
+</html>
