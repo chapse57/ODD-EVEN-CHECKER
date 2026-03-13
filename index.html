@@ -30,7 +30,6 @@
       overflow: hidden;
     }
 
-    /* animated grid background */
     body::before {
       content: '';
       position: fixed;
@@ -63,7 +62,7 @@
     .container {
       position: relative;
       z-index: 1;
-      width: min(480px, 92vw);
+      width: min(520px, 92vw);
       text-align: center;
     }
 
@@ -78,9 +77,21 @@
     .subtitle {
       font-size: .85rem;
       color: var(--neutral);
-      margin-bottom: 40px;
+      margin-bottom: 6px;
       letter-spacing: .08em;
       text-transform: uppercase;
+    }
+
+    .bigint-badge {
+      display: inline-block;
+      font-size: .7rem;
+      color: #00e5ff;
+      border: 1px solid rgba(0,229,255,.3);
+      background: rgba(0,229,255,.08);
+      border-radius: 999px;
+      padding: 3px 12px;
+      letter-spacing: .06em;
+      margin-bottom: 28px;
     }
 
     .card {
@@ -116,21 +127,33 @@
       border: 2px solid var(--border);
       border-radius: 12px;
       padding: 18px 24px;
-      font-size: 2rem;
+      font-size: 1.4rem;
       font-family: 'Black Han Sans', sans-serif;
       color: var(--white);
       text-align: center;
       outline: none;
       transition: border-color .3s, box-shadow .3s;
-      letter-spacing: .05em;
+      letter-spacing: .03em;
+      word-break: break-all;
     }
 
-    input[type="text"]::placeholder { color: #333; font-size: 1.2rem; }
+    input[type="text"]::placeholder { color: #333; font-size: 1rem; font-family: 'Noto Sans KR', sans-serif; }
 
     input[type="text"]:focus {
       border-color: var(--even-color);
       box-shadow: 0 0 0 4px rgba(0,229,255,.1);
     }
+
+    .digit-count {
+      font-size: .7rem;
+      color: #444;
+      text-align: right;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      letter-spacing: .04em;
+      transition: color .3s;
+    }
+    .digit-count.big { color: #00e5ff; }
 
     button {
       width: 100%;
@@ -161,17 +184,19 @@
     .result-badge {
       display: inline-block;
       font-family: 'Black Han Sans', sans-serif;
-      font-size: clamp(2.4rem, 10vw, 3.6rem);
+      font-size: clamp(1.6rem, 6vw, 2.8rem);
       letter-spacing: -.01em;
       opacity: 0;
       transform: translateY(12px) scale(.96);
       transition: opacity .4s cubic-bezier(.22,1,.36,1), transform .4s cubic-bezier(.22,1,.36,1);
+      word-break: break-all;
+      line-height: 1.3;
     }
 
     .result-badge.show { opacity: 1; transform: translateY(0) scale(1); }
     .result-badge.even { color: var(--even-color); }
     .result-badge.odd  { color: var(--odd-color); }
-    .result-badge.error { color: #ffaa44; font-size: 1.1rem; margin-top: 8px; }
+    .result-badge.error { color: #ffaa44; font-size: 1rem; margin-top: 8px; font-family: 'Noto Sans KR'; }
 
     .result-sub {
       font-size: .78rem;
@@ -181,14 +206,15 @@
       transition: opacity .4s .15s;
       letter-spacing: .06em;
     }
-
     .result-sub.show { opacity: 1; }
 
-    .history {
-      margin-top: 28px;
-      text-align: left;
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0 0;
     }
 
+    .history { margin-top: 28px; text-align: left; }
     .history-title {
       font-size: .72rem;
       text-transform: uppercase;
@@ -196,35 +222,26 @@
       color: #444;
       margin-bottom: 12px;
     }
-
-    .history-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .history-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
     .chip {
       padding: 5px 14px;
       border-radius: 999px;
-      font-size: .82rem;
+      font-size: .78rem;
       font-family: 'Black Han Sans', sans-serif;
       border: 1px solid;
       animation: chipIn .25s ease;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-
     @keyframes chipIn {
       from { opacity: 0; transform: scale(.8); }
       to   { opacity: 1; transform: scale(1); }
     }
-
     .chip.even { color: var(--even-color); border-color: rgba(0,229,255,.3); background: rgba(0,229,255,.06); }
     .chip.odd  { color: var(--odd-color);  border-color: rgba(255,77,109,.3); background: rgba(255,77,109,.06); }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 28px 0 0;
-    }
   </style>
 </head>
 <body>
@@ -238,7 +255,8 @@
 
   <div class="card" id="card">
     <div class="input-wrap">
-      <input type="text" id="numInput" placeholder="숫자를 입력하세요" maxlength="15" autocomplete="off"/>
+      <input type="text" id="numInput" placeholder="아무리 큰 정수도 OK!" autocomplete="off" inputmode="numeric"/>
+      <div class="digit-count" id="digitCount">0자리</div>
     </div>
     <button onclick="check()">판별하기</button>
 
@@ -256,51 +274,73 @@
 </div>
 
 <script>
-  const input   = document.getElementById('numInput');
-  const badge   = document.getElementById('badge');
-  const sub     = document.getElementById('sub');
-  const card    = document.getElementById('card');
-  const divider = document.getElementById('divider');
-  const histBox = document.getElementById('historyBox');
-  const histList= document.getElementById('historyList');
+  const input      = document.getElementById('numInput');
+  const badge      = document.getElementById('badge');
+  const sub        = document.getElementById('sub');
+  const card       = document.getElementById('card');
+  const divider    = document.getElementById('divider');
+  const histBox    = document.getElementById('historyBox');
+  const histList   = document.getElementById('historyList');
+  const digitCount = document.getElementById('digitCount');
+
+  // 자릿수 실시간 표시
+  input.addEventListener('input', () => {
+    const raw = input.value.replace(/^-/, '').replace(/\s/g, '');
+    const len = raw.length;
+    digitCount.textContent = len ? `${len.toLocaleString()}자리` : '0자리';
+    digitCount.className = len > 20 ? 'digit-count big' : 'digit-count';
+  });
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
 
   function check() {
-    const raw = input.value.trim();
+    const raw = input.value.trim().replace(/\s/g, '');
 
     badge.className = 'result-badge';
     sub.className   = 'result-sub';
 
-    if (raw === '') {
+    if (raw === '' || raw === '-') {
       show('숫자를 입력해주세요 🙏', 'error', '');
       return;
     }
 
-    const n = Number(raw);
-    if (!Number.isInteger(n) || isNaN(n)) {
-      show('정수를 입력해주세요 🔢', 'error', '');
+    // 정수 형식 검사 (음수 포함, 자릿수 무제한)
+    if (!/^-?\d+$/.test(raw)) {
+      show('정수만 입력 가능해요 🔢', 'error', '소수점, 문자는 안 돼요');
       return;
     }
 
-    const isEven = n % 2 === 0;
+    // BigInt로 처리 → 자릿수 무제한!
+    const n = BigInt(raw);
+    const isEven = n % 2n === 0n;
+
+    const digits = raw.replace(/^-/, '').length;
+    const digitLabel = digits > 15 ? ` (${digits.toLocaleString()}자리)` : '';
+
+    // 20자리 초과 시 앞뒤만 표시
+    const displayNum = digits > 20
+      ? `${raw.slice(0, 6)}…${raw.slice(-4)}`
+      : raw;
 
     if (isEven) {
-      show(`${n} 은(는) 짝수!`, 'even', '2로 나누어 떨어집니다');
+      show(`${displayNum}${digitLabel}\n은(는) 짝수!`, 'even', '2로 나누어 떨어집니다');
       card.className = 'card even-mode';
-      addChip(n, 'even');
+      addChip(displayNum, 'even');
     } else {
-      show(`${n} 은(는) 홀수!`, 'odd', '2로 나누면 1이 남습니다');
+      show(`${displayNum}${digitLabel}\n은(는) 홀수!`, 'odd', '2로 나누면 1이 남습니다');
       card.className = 'card odd-mode';
-      addChip(n, 'odd');
+      addChip(displayNum, 'odd');
     }
 
     input.value = '';
+    digitCount.textContent = '0자리';
+    digitCount.className = 'digit-count';
     input.focus();
   }
 
   function show(text, cls, subText) {
     requestAnimationFrame(() => {
+      badge.style.whiteSpace = 'pre-line';
       badge.textContent = text;
       badge.classList.add(cls, 'show');
       sub.textContent = subText;
@@ -308,19 +348,14 @@
     });
   }
 
-  function addChip(n, cls) {
+  function addChip(label, cls) {
     divider.style.display = 'block';
     histBox.style.display = 'block';
-
     const chip = document.createElement('div');
     chip.className = `chip ${cls}`;
-    chip.textContent = n;
+    chip.textContent = label;
     histList.prepend(chip);
-
-    // keep max 12 chips
-    while (histList.children.length > 12) {
-      histList.removeChild(histList.lastChild);
-    }
+    while (histList.children.length > 12) histList.removeChild(histList.lastChild);
   }
 </script>
 </body>
