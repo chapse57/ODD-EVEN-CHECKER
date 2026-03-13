@@ -25,6 +25,9 @@
 3. **"판별하기"** 버튼을 클릭하거나 **Enter** 키를 누릅니다
 4. 결과를 확인합니다! ✅
 
+- 오른쪽 위에 언어 변경 가능 합니다
+- You can change the language using the toolbar in the top of right side
+
 ---
 
 ## 🛠 기술 스택
